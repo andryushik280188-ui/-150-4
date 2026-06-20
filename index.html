@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ПОДБОР ПАРАЛЕЛЕК ТИСКОВ</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #322f2f;
+            min-height: 100vh;
+            padding: 30px 15px;
+            color: #c4c4c4;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #c7bdb0;
+            font-size: 1.7rem;
+        }
+        .subtitle {
+            text-align: center;
+            color: #d8c8c8;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+        
+        /* Карточки */
+        .card {
+            background: #3a3a40;
+            border: 1px solid #f9f9f9;
+            border-radius: 14px;
+            padding: 22px;
+            margin-bottom: 18px;
+        }
+        .card-title {
+            font-size: 0.95rem;
+            color: #c5bbbb;
+            margin-bottom: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* Числа с галочками */
+        .numbers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap: 8px;
+        }
+        .num-item {
+            position: relative;
+        }
+        .num-item input {
+            position: absolute;
+            opacity: 0;
+        }
+        .num-item label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 8px;
+            background: #6b6b8f;
+            border: 2px solid #d6d6d7;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+            user-select: none;
+        }
+        .num-item label:hover {
+            border-color: #bdbdcd;
+            background: #9999ae;
+        }
+        .num-item input:checked + label {
+            background: rgba(219, 21, 41, 0.871);
+            border-color: #e99929;
+            color: #cfcbc5;
+        }
+        .num-item input:checked + label::before {
+            content: "✓";
+            color: #a9b4ab;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+        
+        /* Кнопки управления выбором */
+        .select-btns {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        .select-btns button {
+            padding: 6px 14px;
+            background: #152614;
+            border: 1px solid #bd8430;
+            border-radius: 8px;
+            color: #d7c5c5;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .select-btns button:hover {
+            background: #8c8c91;
+            color: #c83333;
+        }
+        
+        /* Поля ввода */
+        .inputs-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 6px;
+            color: #d5cdcd;
+            font-size: 0.82rem;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 11px 14px;
+            background: #6b6769;
+            border: 2px solid #e0a54d;
+            border-radius: 10px;
+            color: #ffffff;
+            font-size: 1rem;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: #6366f1;
+        }
+        
+        /* Опции */
+        .options {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+        .option input {
+            width: 18px;
+            height: 18px;
+            accent-color: #fc3e3b;
+        }
+        
+        /* Кнопка поиска */
+        .find-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #d52522, #f21962);
+            border: none;
+            border-radius: 12px;
+            color: #f6fffc;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .find-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 30px rgb(31, 31, 53);
+        }
+        .find-btn:active {
+            transform: translateY(0);
+        }
+        
+        /* Результаты */
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .results-count {
+            font-size: 0.9rem;
+            color: #ffffff;
+        }
+        .results-count strong {
+            color: #f8eff2;
+            font-size: 1.3rem;
+        }
+        .combination {
+            background: #7e7e89;
+            border: 1px solid #e72e37;
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .combo-index {
+            color: #fe9430;
+            font-size: 0.8rem;
+            min-width: 35px;
+        }
+        .combo-nums {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            flex: 1;
+        }
+        .combo-num {
+            background: rgb(68, 68, 79);
+            border: 1px solid rgb(220, 126, 49);
+            color: #e9e9e9;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.95rem;
+        }
+        .combo-eq {
+            color: #e4e4e7;
+            font-weight: bold;
+        }
+        .combo-target {
+            background: rgb(229, 93, 100);
+            border: 1px solid rgba(246, 92, 138, 0.966);
+            color: #eaeaea;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-weight: bold;
+        }
+        .combo-sum {
+            color: #555;
+            font-size: 0.8rem;
+        }
+        
+        .copy-btns {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        .copy-btns button {
+            padding: 8px 16px;
+            background: #353535;
+            border: 1px solid #d2b007;
+            border-radius: 8px;
+            color: #f6e8e8;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .copy-btns button:hover {
+            background: #685967;
+            color: #fff;
+        }
+        
+        .empty, .error, .loading {
+            text-align: center;
+            padding: 40px;
+            color: #555;
+        }
+        .error { color: #ef4444; }
+        .loading { color: #6366f1; }
+        
+        .copied-msg {
+            text-align: center;
+            color: #22c55e;
+            font-size: 0.85rem;
+            margin-top: 10px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .copied-msg.show { opacity: 1; }
+        
+        @media (max-width: 600px) {
+            .inputs-row { grid-template-columns: 1fr; }
+            .numbers-grid { grid-template-columns: repeat(auto-fill, minmax(75px, 1fr)); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1> ПАРАЛЛЕЛЬКИ </h1>
+        <p class="subtitle"> - Подбор высоты подкладки из набора параллелек -</p>
+        <p class="subtitle"> - Набор опорных пластин для тисков РВ150-4 (L=200 мм, S=10 мм, 14 шт) -</p>
+        
+        <!-- Список чисел с галочками -->
+        <div class="card">
+            <div class="card-title">📋 Доступные параллельки отметьте для расчёта (высота параллельки, мм)</div>
+            <div class="numbers-grid" id="numbersGrid"></div>
+            <div class="select-btns">
+                <button onclick="selectAll(true)">Выбрать все</button>
+                <button onclick="selectAll(false)">Снять все</button>
+                <button onclick="selectEven()">Только чётные</button>
+                <button onclick="selectOdd()">Только нечётные</button>
+            </div>
+        </div>
+        
+        <!-- Параметры -->
+        <div class="card">
+            <div class="card-title">⚙️ Параметры поиска</div>
+            <div class="inputs-row">
+                <div class="input-group">
+                    <label>Искомая высота параллелек</label>
+                    <input type="number" id="target" placeholder="100" value="0">
+                </div>
+                <div class="input-group">
+                    <label> Мин. количество параллелек</label>
+                    <input type="number" id="minLen" min="2" value="1" placeholder="2">
+                </div>
+                <div class="input-group">
+                    <label> Макс. количество параллелек</label>
+                    <input type="number" id="maxLen" min="2" max="14" value="3" placeholder="6">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Опции -->
+        <div class="card">
+            <div class="options">
+                <label class="option">
+                    <input type="checkbox" id="allowRepeats">
+                    <span>Разрешить повторы чисел</span>
+                </label>
+                <label class="option">
+                    <input type="checkbox" id="onlyUnique" checked>
+                    <span>Только уникальные комбинации</span>
+                </label>
+            </div>
+        </div>
+        
+        <button class="find-btn" id="findBtn">🔍 Найти комбинации параллелек</button>
+        
+        <!-- Результаты -->
+        <div class="card" id="resultsCard" style="display:none;">
+            <div class="results-header">
+                <span class="results-count">Найдено комбинаций: <strong id="countVal">0</strong></span>
+            </div>
+            <div id="resultsList"></div>
+            <div class="copy-btns">
+                <button onclick="copyResults('list')">📋 Список</button>
+                <button onclick="copyResults('json')">📄 JSON</button>
+                <button onclick="copyResults('csv')">📊 CSV</button>
+            </div>
+            <div class="copied-msg" id="copiedMsg">Скопировано!</div>
+        </div>
+    </div>
+<div class="container">
+        <h1> --- </h1>
+        <p class="subtitle"> - Научно-технологический парк БНТУ "Политехник" Тихонович А.Л. -</p>
+        
+    <script>
+        // === ВАШ СПИСОК ЧИСЕЛ ===
+        const ALL_NUMBERS = [14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 35, 40, 45, 50];
+        
+        // === РЕНДЕР СПИСКА ЧИСЕЛ ===
+        
+        const grid = document.getElementById('numbersGrid');
+        
+        ALL_NUMBERS.forEach((num, i) => {
+            const div = document.createElement('div');
+            div.className = 'num-item';
+            div.innerHTML = `
+                <input type="checkbox" id="num-${i}" value="${num}" checked>
+                <label for="num-${i}">${num}</label>
+            `;
+            grid.appendChild(div);
+        });
+        
+        // === УПРАВЛЕНИЕ ВЫБОРОМ ===
+        
+        function getCheckboxes() {
+            return document.querySelectorAll('.num-item input[type="checkbox"]');
+        }
+        
+        window.selectAll = function(checked) {
+            getCheckboxes().forEach(cb => cb.checked = checked);
+        };
+        
+        window.selectEven = function() {
+            getCheckboxes().forEach(cb => {
+                cb.checked = parseInt(cb.value) % 2 === 0;
+            });
+        };
+        
+        window.selectOdd = function() {
+            getCheckboxes().forEach(cb => {
+                cb.checked = parseInt(cb.value) % 2 !== 0;
+            });
+        };
+        
+        // === АЛГОРИТМ ПОДБОРА ===
+        
+        function getSelectedNumbers() {
+            return Array.from(getCheckboxes())
+                .filter(cb => cb.checked)
+                .map(cb => parseInt(cb.value))
+                .sort((a, b) => a - b);
+        }
+        
+        function findCombinations(numbers, target, minLen, maxLen, allowRepeats, onlyUnique) {
+            const results = [];
+            const seen = new Set();
+            
+            function backtrack(start, current, currentSum) {
+                const len = current.length;
+                
+                // Проверяем сумму только если достигли минимальной длины
+                if (len >= minLen && Math.abs(currentSum - target) < 0.0001) {
+                    const key = current.slice().sort((a, b) => a - b).join(',');
+                    if (!onlyUnique || !seen.has(key)) {
+                        seen.add(key);
+                        results.push([...current]);
+                    }
+                }
+                
+                // Превысили сумму, лимит длины или не осталось чисел
+                if (currentSum > target || len >= maxLen || start >= numbers.length) {
+                    return;
+                }
+                
+                for (let i = start; i < numbers.length; i++) {
+                    const num = numbers[i];
+                    
+                    // Оптимизация: если текущее число уже превысит цель
+                    if (currentSum + num > target) break;
+                    
+                    current.push(num);
+                    
+                    if (allowRepeats) {
+                        backtrack(i, current, currentSum + num);
+                    } else {
+                        backtrack(i + 1, current, currentSum + num);
+                    }
+                    
+                    current.pop();
+                }
+            }
+            
+            backtrack(0, [], 0);
+            return results;
+        }
+        
+        // === UI ПОИСКА ===
+        
+        const targetInput = document.getElementById('target');
+        const minLenInput = document.getElementById('minLen');
+        const maxLenInput = document.getElementById('maxLen');
+        const allowRepeatsCheck = document.getElementById('allowRepeats');
+        const onlyUniqueCheck = document.getElementById('onlyUnique');
+        const findBtn = document.getElementById('findBtn');
+        const resultsCard = document.getElementById('resultsCard');
+        const resultsList = document.getElementById('resultsList');
+        const countVal = document.getElementById('countVal');
+        
+        findBtn.addEventListener('click', () => {
+            const numbers = getSelectedNumbers();
+            const target = parseFloat(targetInput.value);
+            const minLen = parseInt(minLenInput.value) || 2;
+            const maxLen = parseInt(maxLenInput.value) || 6;
+            const allowRepeats = allowRepeatsCheck.checked;
+            const onlyUnique = onlyUniqueCheck.checked;
+            
+            if (numbers.length === 0) {
+                resultsCard.style.display = 'block';
+                resultsList.innerHTML = '<div class="error">Выберите хотя бы одно число</div>';
+                countVal.textContent = '0';
+                return;
+            }
+            if (isNaN(target)) {
+                resultsCard.style.display = 'block';
+                resultsList.innerHTML = '<div class="error">Укажите целевую сумму</div>';
+                countVal.textContent = '0';
+                return;
+            }
+            
+            resultsCard.style.display = 'block';
+            resultsList.innerHTML = '<div class="loading">⏳ Ищу комбинации...</div>';
+            
+            setTimeout(() => {
+                const combos = findCombinations(numbers, target, minLen, maxLen, allowRepeats, onlyUnique);
+                window.lastResults = combos;
+                window.lastTarget = target;
+                countVal.textContent = combos.length;
+                
+                if (combos.length === 0) {
+                    resultsList.innerHTML = `
+                        <div class="empty">
+                            😕 Не найдено комбинаций параллелек<br>
+                            <span style="color:#444;font-size:0.85rem">
+                                Выбрано чисел: ${numbers.length} | Цель: ${target}
+                            </span>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                resultsList.innerHTML = combos.map((combo, i) => `
+                    <div class="combination">
+                        <span class="combo-index">#${i + 1}</span>
+                        <div class="combo-nums">
+                            ${combo.map(n => `<span class="combo-num">${n}</span>`).join('<span style="color:#333;margin:0 2px">+</span>')}
+                        </div>
+                        <span class="combo-eq">=</span>
+                        <span class="combo-target">${target}</span>
+                        <span class="combo-sum">(${combo.length} чисел)</span>
+                    </div>
+                `).join('');
+            }, 10);
+        });
+        
+        // === КОПИРОВАНИЕ ===
+        
+        window.copyResults = function(format) {
+            const combos = window.lastResults || [];
+            const target = window.lastTarget || 0;
+            let text = '';
+            
+            if (format === 'list') {
+                text = combos.map(c => `${c.join(' + ')} = ${target}`).join('\n');
+            } else if (format === 'json') {
+                text = JSON.stringify({target, combinations: combos}, null, 2);
+            } else if (format === 'csv') {
+                const maxLen = Math.max(...combos.map(c => c.length), 0);
+                const headers = Array.from({length: maxLen}, (_, i) => `num${i+1}`).join(',');
+                text = headers + '\n' + combos.map(c => {
+                    const padded = [...c, ...Array(maxLen - c.length).fill('')];
+                    return padded.join(',');
+                }).join('\n');
+            }
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const msg = document.getElementById('copiedMsg');
+                msg.classList.add('show');
+                setTimeout(() => msg.classList.remove('show'), 2000);
+            });
+        };
+    </script>
+</body>
+</html>
